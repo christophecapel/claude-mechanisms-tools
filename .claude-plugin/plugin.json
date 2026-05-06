@@ -1,0 +1,6 @@
+{
+  "name": "claude-mechanisms-tools",
+  "description": "Tools that implement the mechanisms in claude-mechanisms. v0.1 Session Hygiene: /check, worktree-edit-gate, /press1-check.",
+  "version": "0.1.0",
+  "author": "Christophe Capel"
+}

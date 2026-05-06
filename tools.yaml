@@ -1,0 +1,46 @@
+# tools.yaml
+#
+# Declarative manifest of every tool in this repo with bidirectional cross-links
+# to the mechanisms it implements.
+#
+# Pairs with claude-mechanisms/mechanisms.yaml — every mechanism_id here must
+# resolve in mechanisms.yaml; every claude-mechanisms `implementations:` entry
+# must resolve to a real path in this repo.
+#
+# v0.1 verifies cross-link integrity manually at PR review time.
+# v0.1.1 will add `cross_manifest_id_match` strategy to repo-pair-drift-gate.py.
+
+version: 1
+updated: 2026-05-08
+mechanisms_source: github.com/christophecapel/claude-mechanisms
+release: v0.1.0
+
+tools:
+  - id: check
+    name: "/check — session-close audit"
+    file: skills/check/check.md
+    skill_file: skills/check/SKILL.md
+    kind: skill
+    introduced: v0.1.0
+    mechanism_ids: [16, 11, 1]
+    description: "Session-scoped manifest, two-section open items, decisive close signal. Pre-render check validates PR-merge dependencies before flagging rows as blocked."
+
+  - id: worktree-edit-gate
+    name: "worktree-edit-gate — pre-edit guard"
+    file: hooks/worktree-edit-gate.py
+    install_script: hooks/install-hook.sh
+    kind: hook
+    hook_event: PreToolUse
+    hook_matcher: "Edit|Write|MultiEdit|NotebookEdit"
+    introduced: v0.1.0
+    mechanism_ids: [17, 11]
+    description: "Warns when an absolute-path edit targets a location inside the parent repo but outside the currently active worktree. Catches the silent-miss failure where edits intended for a worktree branch land in the main checkout instead."
+
+  - id: press1-check
+    name: "/press1-check — Bash permission audit"
+    file: skills/press1-check/audit-permissions.py
+    skill_file: skills/press1-check/SKILL.md
+    kind: skill+script
+    introduced: v0.1.0
+    mechanism_ids: [21, 19]
+    description: "Surface LOW-risk Bash commands that should be allow-listed. State-tracked to avoid re-surfacing already-reviewed commands. Absorbs the previously standalone claude-code-press1-check repo (archived 2026-05-08)."
