@@ -1,12 +1,21 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Built for](https://img.shields.io/badge/Built%20for-Claude%20Code-orange.svg)
-![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)
 
 > Tools that implement the operating mechanisms in [`claude-mechanisms`](https://github.com/christophecapel/claude-mechanisms).
 
 `claude-mechanisms` (the why) ↔ `claude-mechanisms-tools` (the how).
 
 Mechanisms describe how the work should be done. Tools enforce it. Each tool here implements one or more mechanisms from the catalog with a trigger, retry logic, and a failure path.
+
+## v0.2 — Plan Discipline
+
+Two tools that turn plan-mode from a habit into a mechanism. The gate enforces the plan's structural contract on `ExitPlanMode` and its contract with the PR on `gh pr create`. The archiver links every plan file to its merged PR so the active list shows only live work.
+
+| Tool | What it does | Implements mechanism(s) |
+|---|---|---|
+| [`plan-review-gate`](hooks/plan-review-gate.py) | Two-phase PreToolUse hook — Phase 1 blocks `ExitPlanMode` if required sections are missing; Phase 2 blocks `gh pr create` if the diff misses planned files | [#14](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/14-trace-the-cascade.md), [#16](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/16-smallest-shippable-first.md), [#17](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/17-structural-checks-use-hooks.md) |
+| [`/plan-archive`](skills/plan-archive/) | Link plan-mode files to merged PRs — moves them into `~/.claude/plans/archive/by-pr/PR-<num>-<branch>/` with `_meta.yaml` cross-references | [#5](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/05-deferred-work-needs-persistent-markers.md) |
 
 ## v0.1 — Session Hygiene
 
@@ -28,10 +37,11 @@ The full manifest is [`tools.yaml`](tools.yaml).
 git clone https://github.com/christophecapel/claude-mechanisms-tools.git ~/.claude/plugins/claude-mechanisms-tools
 ```
 
-That gets you the skills (`/check`, `/press1-check`). For the hook, run the install script once:
+That gets you all the skills (`/check`, `/press1-check`, `/plan-archive`). For the hooks, run the install scripts once:
 
 ```bash
-~/.claude/plugins/claude-mechanisms-tools/hooks/install-hook.sh
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-hook.sh                # worktree-edit-gate (v0.1)
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-plan-review-gate.sh    # plan-review-gate Phase 1 + Phase 2 (v0.2)
 ```
 
 **Option 2 — Clone and pick what you want**
@@ -60,10 +70,11 @@ Three solo repos for three tools is the N+1 anti-pattern (Mechanism [#21](https:
 
 | Release | Theme | Tools |
 |---|---|---|
-| **v0.1** (current) | Session Hygiene | `/check`, `worktree-edit-gate`, `/press1-check` |
-| v0.2 | Git Workflow Discipline | Worktree-or-bust, atomic commit-push-PR, branch-contamination gate |
-| v0.3 | Planning + Execution Audit | `plan-review-gate`, execution-audit |
-| v0.4 | Content Pipeline | `/brief`, `/draft`, `/review`, `/audit`, `/publish-finalize` |
+| v0.1 | Session Hygiene | `/check`, `worktree-edit-gate`, `/press1-check` |
+| **v0.2** (current) | Plan Discipline | `plan-review-gate` (Phase 1 + Phase 2), `/plan-archive` |
+| v0.3 | Detection & Audit | `error-audit`, `/error-audit-triage` |
+| v0.4 | Memory Discipline | `feedback-memory-gate`, memory-format spec |
+| v0.5 | Atomic Git Workflow | Slim subset of `git-workflow-gate` (commit-msg format, branch verification, post-push PR nag) |
 
 Cadence: one post per release. No batching.
 

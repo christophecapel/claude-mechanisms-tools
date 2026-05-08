@@ -13,7 +13,7 @@
 version: 1
 updated: 2026-05-08
 mechanisms_source: github.com/christophecapel/claude-mechanisms
-release: v0.1.0
+release: v0.2.0
 
 tools:
   - id: check
@@ -44,3 +44,23 @@ tools:
     introduced: v0.1.0
     mechanism_ids: [21, 19]
     description: "Surface LOW-risk Bash commands that should be allow-listed. State-tracked to avoid re-surfacing already-reviewed commands. Absorbs the previously standalone claude-code-press1-check repo (archived 2026-05-08)."
+
+  - id: plan-review-gate
+    name: "plan-review-gate — Phase 1 ExitPlanMode + Phase 2 PR diff audit"
+    file: hooks/plan-review-gate.py
+    install_script: hooks/install-plan-review-gate.sh
+    kind: hook
+    hook_event: PreToolUse
+    hook_matcher: "ExitPlanMode|Bash"
+    introduced: v0.2.0
+    mechanism_ids: [14, 16, 17]
+    description: "Two-phase plan discipline gate. Phase 1 blocks ExitPlanMode if the plan is missing required sections (Context, Implementation, Tests, Verification, Pre-flight, Files). Phase 2 blocks `gh pr create` if the PR diff is missing files the plan claimed it would touch. Hardened in CC-174 (head-branch-aware diff resolution) and CC-175 (token-aware command matcher via shlex)."
+
+  - id: plan-archive
+    name: "/plan-archive — link plan-mode files to merged PRs"
+    file: skills/plan-archive/plan-archive.py
+    skill_file: skills/plan-archive/SKILL.md
+    kind: skill+script
+    introduced: v0.2.0
+    mechanism_ids: [5]
+    description: "Plans accumulate on every ExitPlanMode. This skill groups them by the merged PR that executed them and moves the bundle into ~/.claude/plans/archive/by-pr/PR-<num>-<branch>/, with _meta.yaml linking back to PR + Linear tickets + commits."
