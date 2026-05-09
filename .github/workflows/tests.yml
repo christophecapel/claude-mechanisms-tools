@@ -23,3 +23,6 @@ jobs:
 
       - name: Run worktree-edit-gate test suite
         run: python3 -m unittest tests.test_worktree_edit_gate -v
+
+      - name: Run plan-review-gate test suite
+        run: python3 -m unittest tests.test_plan_review_gate -v

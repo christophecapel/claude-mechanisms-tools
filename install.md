@@ -8,13 +8,14 @@ Three install paths. Pick the one that matches how you already use Claude Code.
 git clone https://github.com/christophecapel/claude-mechanisms-tools.git ~/.claude/plugins/claude-mechanisms-tools
 ```
 
-Skills (`/check`, `/press1-check`) auto-discover from the plugin path. The hook needs one extra step:
+Skills (`/check`, `/press1-check`, `/plan-archive`) auto-discover from the plugin path. The hooks need one extra step each:
 
 ```bash
-~/.claude/plugins/claude-mechanisms-tools/hooks/install-hook.sh
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-hook.sh                # worktree-edit-gate (v0.1)
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-plan-review-gate.sh    # plan-review-gate Phase 1 + Phase 2 (v0.2)
 ```
 
-The install script idempotently adds the `worktree-edit-gate` PreToolUse matcher to your `~/.claude/settings.json`. Re-runs are safe.
+Both install scripts idempotently add their `PreToolUse` matchers to `~/.claude/settings.json`. Re-runs are safe.
 
 ## Option 2: Clone and pick what you want
 
@@ -30,7 +31,9 @@ Browse [`skills/`](skills/) or [`hooks/`](hooks/), open the file you want, and c
 
 - `skills/check/check.md` → `~/.claude/commands/check.md`
 - `skills/press1-check/SKILL.md` → `~/.claude/skills/press1-check/SKILL.md`
+- `skills/plan-archive/SKILL.md` → `~/.claude/skills/plan-archive/SKILL.md`
 - `hooks/worktree-edit-gate.py` → wire as a `PreToolUse` hook (see [Hooks](#hooks-setup) below)
+- `hooks/plan-review-gate.py` + `lib/plan_files_lib.py` → wire as two `PreToolUse` hooks (Phase 1 on `ExitPlanMode`, Phase 2 on `Bash`)
 
 ## Hooks setup
 
@@ -55,6 +58,44 @@ Or wire it manually — add this entry under `hooks.PreToolUse`:
 ```
 
 The hook is silent on pass (Mechanism [#20](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/20-hooks-silent-on-pass.md)). It only emits an `additionalContext` warning when an absolute-path edit would land outside the active worktree.
+
+### plan-review-gate (v0.2)
+
+Two PreToolUse entries — Phase 1 on `ExitPlanMode`, Phase 2 on `Bash` (matches `gh pr create`). The included `install-plan-review-gate.sh` wires both idempotently:
+
+```bash
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-plan-review-gate.sh
+```
+
+Or manually — add these two entries under `hooks.PreToolUse`:
+
+```json
+{
+  "matcher": "ExitPlanMode",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "python3 ~/.claude/plugins/claude-mechanisms-tools/hooks/plan-review-gate.py"
+    }
+  ]
+},
+{
+  "matcher": "Bash",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "python3 ~/.claude/plugins/claude-mechanisms-tools/hooks/plan-review-gate.py --mode=pre-pr"
+    }
+  ]
+}
+```
+
+Optional configuration via env vars (see also `lib/plan_files_lib.py` and `skills/plan-archive/SKILL.md`):
+
+| Env var | Purpose | Default |
+|---|---|---|
+| `CLAUDE_PLAN_REPO_PREFIXES` | Path prefixes treated as repo-relative when matching plan files to PR diffs | auto-detect via `git rev-parse --show-toplevel` |
+| `CLAUDE_PLAN_PR_URL_TEMPLATE` | GitHub PR URL template with `{number}` placeholder | auto-detect from `git remote get-url origin` |
 
 ## Customization
 

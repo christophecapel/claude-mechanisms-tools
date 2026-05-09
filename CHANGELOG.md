@@ -4,6 +4,31 @@ All notable changes to `claude-mechanisms-tools` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] — 2026-05-08 — Plan Discipline
+
+Two tools that turn plan-mode from a habit into a mechanism. Phase 1 enforces the plan's own structural contract; Phase 2 enforces the plan's contract with the PR.
+
+### Added
+
+- **`plan-review-gate`** — two-phase PreToolUse hook. Phase 1 (matcher: `ExitPlanMode`) blocks plan approval if required sections are missing (`Context`, `Implementation`, `Tests`, `Verification`, `Pre-flight`, `Files`). Phase 2 (matcher: `Bash`, `--mode=pre-pr`) blocks `gh pr create` if the PR diff is missing files the plan claimed it would touch. Hardened in CC-174 (`parse_head_branch` + `head_ref` for accurate diff resolution against `--head` branches) and CC-175 (token-aware command matcher via `shlex.split`, eliminates substring false-fires when commit/PR bodies mention `gh pr create` verbatim). 24 new unit tests covering positive, negative, and edge fixtures. Implements mechanisms #14, #16, #17.
+- **`/plan-archive`** — link plan-mode files to their merged PRs. Plans accumulate on every `ExitPlanMode`; this skill groups them by the PR that executed them and moves the bundle into `~/.claude/plans/archive/by-pr/PR-<num>-<branch-slug>/` with `_meta.yaml` linking back to the PR + Linear tickets + commits. Modes: `--mode=audit` (read-only listing), `--mode=archive-pr --pr=N`, `--mode=backfill --since=14d`. All modes default to `--dry-run`; `--execute` actually moves files. Implements mechanism #5.
+- **`lib/plan_files_lib.py`** — shared parsing for plan-review-gate (Phase 2) and plan-archive. Single source of truth for `## Files` section extraction so the two tools can never disagree on which files a plan declares.
+
+### Configuration
+
+Both tools auto-detect repo context from cwd's git metadata:
+
+| Env var | Purpose | Default |
+|---|---|---|
+| `CLAUDE_PLAN_REPO_PREFIXES` | Path prefixes treated as repo-relative when matching plan files to PR diffs | auto-detect via `git rev-parse --show-toplevel` |
+| `CLAUDE_PLAN_PR_URL_TEMPLATE` | GitHub PR URL template with `{number}` placeholder, used in `plan-archive`'s `_meta.yaml` | auto-detect from `git remote get-url origin` |
+
+### Cross-repo changes
+
+- `claude-mechanisms` — adds `implementations:` field to `mechanisms.yaml` for #5, #14, #16, #17. Each entry points back to the corresponding tool here.
+
+[v0.2.0]: https://github.com/christophecapel/claude-mechanisms-tools/releases/tag/v0.2.0
+
 ## [v0.1.0] — 2026-05-08 — Session Hygiene
 
 Initial release. Three tools that close the most common silent failure modes around the end of a Claude Code session.
