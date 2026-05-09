@@ -1,12 +1,20 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Built for](https://img.shields.io/badge/Built%20for-Claude%20Code-orange.svg)
-![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.5.0-blue.svg)
 
 > Tools that implement the operating mechanisms in [`claude-mechanisms`](https://github.com/christophecapel/claude-mechanisms).
 
 `claude-mechanisms` (the why) ↔ `claude-mechanisms-tools` (the how).
 
 Mechanisms describe how the work should be done. Tools enforce it. Each tool here implements one or more mechanisms from the catalog with a trigger, retry logic, and a failure path.
+
+## v0.5 — Atomic Git Workflow
+
+One tool, five gates. Don't commit to main, use the right commit-message format, don't push behind origin/main, don't push to a frozen branch, don't push without a PR. Structural enforcement of the atomic commit→push→PR flow.
+
+| Tool | What it does | Implements mechanism(s) |
+|---|---|---|
+| [`git-workflow-gate`](hooks/git-workflow-gate.py) | PreToolUse + PostToolUse hooks on `Bash` — Gate 0 (cd-chain block) + Gate 1 (pre-commit branch+format) + Gate 1b (post-commit unpushed nag) + Gate 2 (pre-push rebase+frozen+force) + Gate 5 (post-push PR nag) | [#1](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/01-discover-and-derive.md), [#11](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/11-one-branch-one-scope.md), [#17](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/17-structural-checks-use-hooks.md) |
 
 ## v0.4 — Memory Discipline
 
@@ -89,8 +97,8 @@ Three solo repos for three tools is the N+1 anti-pattern (Mechanism [#21](https:
 | v0.1 | Session Hygiene | `/check`, `worktree-edit-gate`, `/press1-check` |
 | v0.2 | Plan Discipline | `plan-review-gate` (Phase 1 + Phase 2), `/plan-archive` |
 | v0.3 | Detection & Audit | `/error-audit` |
-| **v0.4** (current) | Memory Discipline | `feedback-memory-gate` |
-| v0.5 | Atomic Git Workflow | Slim subset of `git-workflow-gate` (commit-msg format, branch verification, post-push PR nag) |
+| v0.4 | Memory Discipline | `feedback-memory-gate` |
+| **v0.5** (current) | Atomic Git Workflow | `git-workflow-gate` (5 gates: cd-chain, pre-commit, post-commit, pre-push, post-push) |
 | v0.6 | TBD | TBD |
 
 Cadence: one post per release. No batching.
