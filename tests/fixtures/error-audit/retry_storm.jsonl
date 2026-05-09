@@ -1,0 +1,4 @@
+{"type":"system","subtype":"api_error","error":{"tool_name":"Edit","error":{"type":"overloaded_error"}},"timestamp":"2026-04-20T10:00:00Z","sessionId":"fixture-storm"}
+{"type":"system","subtype":"api_error","error":{"tool_name":"Edit","error":{"type":"overloaded_error"}},"timestamp":"2026-04-20T10:00:10Z","sessionId":"fixture-storm"}
+{"type":"system","subtype":"api_error","error":{"tool_name":"Edit","error":{"type":"overloaded_error"}},"timestamp":"2026-04-20T10:00:20Z","sessionId":"fixture-storm"}
+{"type":"system","subtype":"api_error","error":{"tool_name":"Edit","error":{"type":"overloaded_error"}},"timestamp":"2026-04-20T10:00:30Z","sessionId":"fixture-storm"}

@@ -1,0 +1,1 @@
+{"type":"attachment","attachment":{"type":"hook_failure","hookName":"Stop:response-linter","command":"python3 ~/myOS/scripts/response-linter.py","stderr":"RESPONSE LINTER: Permission-seeking detected (1/2). Want me to in: example output","stdout":"","exitCode":2},"timestamp":"2026-04-20T10:00:00Z","cwd":"/Users/christophe/myOS","sessionId":"fixture-hook"}

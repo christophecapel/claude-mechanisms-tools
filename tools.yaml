@@ -11,9 +11,9 @@
 # v0.1.1 will add `cross_manifest_id_match` strategy to repo-pair-drift-gate.py.
 
 version: 1
-updated: 2026-05-08
+updated: 2026-05-09
 mechanisms_source: github.com/christophecapel/claude-mechanisms
-release: v0.2.0
+release: v0.3.0
 
 tools:
   - id: check
@@ -64,3 +64,12 @@ tools:
     introduced: v0.2.0
     mechanism_ids: [5]
     description: "Plans accumulate on every ExitPlanMode. This skill groups them by the merged PR that executed them and moves the bundle into ~/.claude/plans/archive/by-pr/PR-<num>-<branch>/, with _meta.yaml linking back to PR + Linear tickets + commits."
+
+  - id: error-audit
+    name: "/error-audit — cross-session error audit"
+    file: skills/error-audit/error-audit.py
+    skill_file: skills/error-audit/SKILL.md
+    kind: skill+script
+    introduced: v0.3.0
+    mechanism_ids: [19, 21]
+    description: "Scans every Claude Code session transcript under ~/.claude/projects/*.jsonl for 7 error classes (tool_error, validation_error, permission_denial, hook_block, bash_fail, retry_storm, read_before_edit), clusters by root-cause signature, and surfaces top N with suggested remediation tiers. Suppressions file ships with the toolkit; CLAUDE_ERROR_AUDIT_SUPPRESSIONS env var overrides path."

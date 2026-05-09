@@ -1,0 +1,2 @@
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_01EDIT","name":"Edit","input":{"file_path":"/tmp/x.md","old_string":"a","new_string":"b"}}]},"timestamp":"2026-04-20T10:00:00Z","cwd":"/tmp","sessionId":"fixture-rbe"}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01EDIT","content":"File has not been read yet. Read it first before writing to it.","is_error":true}]},"timestamp":"2026-04-20T10:00:01Z","cwd":"/tmp","sessionId":"fixture-rbe"}
