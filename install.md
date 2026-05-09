@@ -8,14 +8,15 @@ Three install paths. Pick the one that matches how you already use Claude Code.
 git clone https://github.com/christophecapel/claude-mechanisms-tools.git ~/.claude/plugins/claude-mechanisms-tools
 ```
 
-Skills (`/check`, `/press1-check`, `/plan-archive`) auto-discover from the plugin path. The hooks need one extra step each:
+Skills (`/check`, `/press1-check`, `/plan-archive`, `/error-audit`) auto-discover from the plugin path. The hooks need one extra step each:
 
 ```bash
-~/.claude/plugins/claude-mechanisms-tools/hooks/install-hook.sh                # worktree-edit-gate (v0.1)
-~/.claude/plugins/claude-mechanisms-tools/hooks/install-plan-review-gate.sh    # plan-review-gate Phase 1 + Phase 2 (v0.2)
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-hook.sh                       # worktree-edit-gate (v0.1)
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-plan-review-gate.sh           # plan-review-gate Phase 1 + Phase 2 (v0.2)
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-feedback-memory-gate.sh       # feedback-memory-gate (v0.4)
 ```
 
-Both install scripts idempotently add their `PreToolUse` matchers to `~/.claude/settings.json`. Re-runs are safe.
+All install scripts idempotently add their hook matchers to `~/.claude/settings.json`. Re-runs are safe.
 
 ## Option 2: Clone and pick what you want
 
@@ -34,6 +35,7 @@ Browse [`skills/`](skills/) or [`hooks/`](hooks/), open the file you want, and c
 - `skills/plan-archive/SKILL.md` → `~/.claude/skills/plan-archive/SKILL.md`
 - `hooks/worktree-edit-gate.py` → wire as a `PreToolUse` hook (see [Hooks](#hooks-setup) below)
 - `hooks/plan-review-gate.py` + `lib/plan_files_lib.py` → wire as two `PreToolUse` hooks (Phase 1 on `ExitPlanMode`, Phase 2 on `Bash`)
+- `hooks/feedback-memory-gate.py` → wire as a `PostToolUse` hook on `Write`
 
 ## Hooks setup
 
@@ -58,6 +60,30 @@ Or wire it manually — add this entry under `hooks.PreToolUse`:
 ```
 
 The hook is silent on pass (Mechanism [#20](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/20-hooks-silent-on-pass.md)). It only emits an `additionalContext` warning when an absolute-path edit would land outside the active worktree.
+
+### feedback-memory-gate (v0.4)
+
+PostToolUse on `Write` matcher. The included `install-feedback-memory-gate.sh` wires it idempotently:
+
+```bash
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-feedback-memory-gate.sh
+```
+
+Or manually — add this entry under `hooks.PostToolUse`:
+
+```json
+{
+  "matcher": "Write",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "python3 ~/.claude/plugins/claude-mechanisms-tools/hooks/feedback-memory-gate.py"
+    }
+  ]
+}
+```
+
+The hook fast-paths to silent on non-feedback-memory writes. It only emits an `additionalContext` nudge when a `claude-memory/feedback_*.md` file describes a bug (matched against bug-indicator keywords) without a `**Linear:** CC-NN` reference.
 
 ### plan-review-gate (v0.2)
 

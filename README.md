@@ -1,12 +1,20 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Built for](https://img.shields.io/badge/Built%20for-Claude%20Code-orange.svg)
-![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)
 
 > Tools that implement the operating mechanisms in [`claude-mechanisms`](https://github.com/christophecapel/claude-mechanisms).
 
 `claude-mechanisms` (the why) ↔ `claude-mechanisms-tools` (the how).
 
 Mechanisms describe how the work should be done. Tools enforce it. Each tool here implements one or more mechanisms from the catalog with a trigger, retry logic, and a failure path.
+
+## v0.4 — Memory Discipline
+
+One tool. Feedback memories that describe bugs should link to a Linear ticket — otherwise the broken behavior is captured but not tracked toward remediation. This gate enforces the link as a structural check on every memory write.
+
+| Tool | What it does | Implements mechanism(s) |
+|---|---|---|
+| [`feedback-memory-gate`](hooks/feedback-memory-gate.py) | PostToolUse hook on `Write` — when a `claude-memory/feedback_*.md` file describes a bug (`bug`, `broken`, `fails`, etc.) without a `**Linear:** CC-NN` reference, nudges to add one | [#17](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/17-structural-checks-use-hooks.md), [#5](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/05-deferred-work-needs-persistent-markers.md) |
 
 ## v0.3 — Detection & Audit
 
@@ -80,9 +88,10 @@ Three solo repos for three tools is the N+1 anti-pattern (Mechanism [#21](https:
 |---|---|---|
 | v0.1 | Session Hygiene | `/check`, `worktree-edit-gate`, `/press1-check` |
 | v0.2 | Plan Discipline | `plan-review-gate` (Phase 1 + Phase 2), `/plan-archive` |
-| **v0.3** (current) | Detection & Audit | `/error-audit` |
-| v0.4 | Memory Discipline | `feedback-memory-gate`, memory-format spec |
+| v0.3 | Detection & Audit | `/error-audit` |
+| **v0.4** (current) | Memory Discipline | `feedback-memory-gate` |
 | v0.5 | Atomic Git Workflow | Slim subset of `git-workflow-gate` (commit-msg format, branch verification, post-push PR nag) |
+| v0.6 | TBD | TBD |
 
 Cadence: one post per release. No batching.
 
