@@ -29,3 +29,6 @@ jobs:
 
       - name: Run error-audit test suite
         run: python3 -m unittest tests.test_error_audit -v
+
+      - name: Run feedback-memory-gate test suite
+        run: python3 -m unittest tests.test_feedback_memory_gate -v

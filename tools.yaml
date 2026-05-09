@@ -13,7 +13,7 @@
 version: 1
 updated: 2026-05-09
 mechanisms_source: github.com/christophecapel/claude-mechanisms
-release: v0.3.0
+release: v0.4.0
 
 tools:
   - id: check
@@ -73,3 +73,14 @@ tools:
     introduced: v0.3.0
     mechanism_ids: [19, 21]
     description: "Scans every Claude Code session transcript under ~/.claude/projects/*.jsonl for 7 error classes (tool_error, validation_error, permission_denial, hook_block, bash_fail, retry_storm, read_before_edit), clusters by root-cause signature, and surfaces top N with suggested remediation tiers. Suppressions file ships with the toolkit; CLAUDE_ERROR_AUDIT_SUPPRESSIONS env var overrides path."
+
+  - id: feedback-memory-gate
+    name: "feedback-memory-gate — bug-describing memories need Linear ref"
+    file: hooks/feedback-memory-gate.py
+    install_script: hooks/install-feedback-memory-gate.sh
+    kind: hook
+    hook_event: PostToolUse
+    hook_matcher: "Write"
+    introduced: v0.4.0
+    mechanism_ids: [17, 5]
+    description: "PostToolUse hook on Write. Fires after a feedback memory file (claude-memory/feedback_*.md) is written. If content matches bug indicators (bug, broken, fails, error, wrong, fix, crash, missing, etc.) but lacks a **Linear:** CC-NN reference, emits an additionalContext nudge to create one. Soft warning, not a hard block. Fast-paths to silent on non-feedback-memory writes."
