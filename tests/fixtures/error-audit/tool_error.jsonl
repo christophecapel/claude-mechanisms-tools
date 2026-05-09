@@ -1,0 +1,2 @@
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_01AAA","name":"Read","input":{"file_path":"/Users/christophe/missing.md"}}]},"timestamp":"2026-04-20T10:00:00Z","cwd":"/Users/christophe/myOS","sessionId":"fixture-tool-error"}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01AAA","content":"File does not exist: /Users/christophe/missing.md","is_error":true}]},"timestamp":"2026-04-20T10:00:01Z","cwd":"/Users/christophe/myOS","sessionId":"fixture-tool-error"}

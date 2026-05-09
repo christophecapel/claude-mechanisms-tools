@@ -1,12 +1,20 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Built for](https://img.shields.io/badge/Built%20for-Claude%20Code-orange.svg)
-![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)
 
 > Tools that implement the operating mechanisms in [`claude-mechanisms`](https://github.com/christophecapel/claude-mechanisms).
 
 `claude-mechanisms` (the why) ↔ `claude-mechanisms-tools` (the how).
 
 Mechanisms describe how the work should be done. Tools enforce it. Each tool here implements one or more mechanisms from the catalog with a trigger, retry logic, and a failure path.
+
+## v0.3 — Detection & Audit
+
+One tool. Cluster every error across every Claude Code session by root-cause signature, surface the top offenders, classify them by remediation tier (allowlist / hook / instruction). Suppress the working-as-designed ones so signal doesn't drown in noise.
+
+| Tool | What it does | Implements mechanism(s) |
+|---|---|---|
+| [`/error-audit`](skills/error-audit/SKILL.md) | Scan every session transcript for 7 error classes, cluster by root-cause signature, surface top N with remediation tiers | [#19](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/19-detection-rules-specific-patterns.md), [#21](https://github.com/christophecapel/claude-mechanisms/blob/main/mechanisms/21-structural-intervention-beats-pattern-n-plus-1.md) |
 
 ## v0.2 — Plan Discipline
 
@@ -71,8 +79,8 @@ Three solo repos for three tools is the N+1 anti-pattern (Mechanism [#21](https:
 | Release | Theme | Tools |
 |---|---|---|
 | v0.1 | Session Hygiene | `/check`, `worktree-edit-gate`, `/press1-check` |
-| **v0.2** (current) | Plan Discipline | `plan-review-gate` (Phase 1 + Phase 2), `/plan-archive` |
-| v0.3 | Detection & Audit | `error-audit`, `/error-audit-triage` |
+| v0.2 | Plan Discipline | `plan-review-gate` (Phase 1 + Phase 2), `/plan-archive` |
+| **v0.3** (current) | Detection & Audit | `/error-audit` |
 | v0.4 | Memory Discipline | `feedback-memory-gate`, memory-format spec |
 | v0.5 | Atomic Git Workflow | Slim subset of `git-workflow-gate` (commit-msg format, branch verification, post-push PR nag) |
 

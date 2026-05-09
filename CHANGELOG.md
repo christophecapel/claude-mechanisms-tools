@@ -4,6 +4,34 @@ All notable changes to `claude-mechanisms-tools` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.0] — 2026-05-09 — Detection & Audit
+
+One tool that closes the loop between failure observation and pattern recognition. After a few weeks of working with Claude Code, errors stop being noise and start being signal — but only if you can cluster them by root cause and see which ones recur.
+
+### Added
+
+- **`/error-audit`** — scans every Claude Code session transcript under `~/.claude/projects/*.jsonl` for 7 error classes (`tool_error`, `validation_error`, `permission_denial`, `hook_block`, `bash_fail`, `retry_storm`, `read_before_edit`), normalises signatures (strips paths, IDs, UUIDs, timestamps), clusters by `class:tool:signature`, and surfaces top N with suggested remediation tiers. Default output is human-readable; `--json` is machine-readable for piping into other tools. 26 unit tests covering all 7 classes + clustering + suppression handling. Implements mechanisms #19, #21.
+- **`skills/error-audit/suppressions.md`** — ships with one default entry (the plan-review-gate's intentional `permission_denial:ExitPlanMode` blocks). Add your own to silence known-good clusters.
+
+### Configuration
+
+| Env var | Purpose | Default |
+|---|---|---|
+| `CLAUDE_ERROR_AUDIT_SUPPRESSIONS` | Suppressions file path | `skills/error-audit/suppressions.md` (ships with toolkit) |
+
+CLI flags: `--projects-dir`, `--suppressions-path`, `--no-suppressions`, `--show-suppressed`, `--since`, `--top`, `--json`. All path defaults are CLI-overridable.
+
+### Cross-repo changes
+
+- `claude-mechanisms` v2.5 — extends `implementations:` on #19 and #21 to include `/error-audit` alongside the existing `/press1-check` from v0.1.0.
+
+### Out of scope
+
+- `error-audit-post.py` (myOS-specific GitHub health-check issue format) — stays myOS-only.
+- `/error-audit-triage` (interactive remediation flow with Linear ticket creation) — agent-path + Linear flow coupling, deferred to v0.3.1+.
+
+[v0.3.0]: https://github.com/christophecapel/claude-mechanisms-tools/releases/tag/v0.3.0
+
 ## [v0.2.0] — 2026-05-08 — Plan Discipline
 
 Two tools that turn plan-mode from a habit into a mechanism. Phase 1 enforces the plan's own structural contract; Phase 2 enforces the plan's contract with the PR.
