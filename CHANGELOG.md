@@ -4,6 +4,55 @@ All notable changes to `claude-mechanisms-tools` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.0] — 2026-05-09 — Atomic Git Workflow
+
+One tool, five gates. Slim subset of the myOS git-workflow gate that's stayed myOS-private until now because it carried Linear/spec-doc/memory-index/SessionStart/SessionEnd coupling. The slim version drops the myOS-specific checks and ships the universally-applicable discipline.
+
+### Added
+
+- **`git-workflow-gate`** — five gates on Bash via PreToolUse + PostToolUse:
+  - **Gate 0 — cd-chain detection** (PreToolUse): blocks `cd <dir> && git ...` chains. Use `git -C <dir>` or the Bash tool's `cwd` parameter instead. Chained `cd` leaks shell state and has caused wrong-directory commits.
+  - **Gate 1 — pre-commit** (PreToolUse): blocks commits to `main`/`master`. Validates commit-message format (`<type>: <description>` with allowed type from `ALLOWED_COMMIT_TYPES` or per-repo `.commit-types`). Warns on `--amend`.
+  - **Gate 1b — post-commit** (PostToolUse): info-nag listing unpushed commits on the current branch. Skips on `--amend`.
+  - **Gate 2 — pre-push** (PreToolUse): blocks pushing if branch is behind `origin/main` (rebase required). Blocks pushing to a branch with a merged PR (frozen scope per HWW #11). Warns on `--force` push.
+  - **Gate 5 — post-push** (PostToolUse): info-nag if no PR exists for the pushed branch.
+- **`hooks/install-git-workflow-gate.sh`** — idempotent installer for both PreToolUse and PostToolUse phases.
+- **38 unit tests** covering all 5 gates + parsers (`detect_cd_git_chain`, `extract_git_commands`, `parse_commit_message`, `parse_push_remote`, `get_allowed_commit_types`) + main dispatch fast paths + non-bash silence.
+
+### Configuration
+
+| Mechanism | How |
+|---|---|
+| Per-repo allowed commit types | Drop a `.commit-types` file at the repo root; one type per line, `#` comments ignored. Fully replaces `ALLOWED_COMMIT_TYPES` for that repo. |
+
+### Default `ALLOWED_COMMIT_TYPES`
+
+`fix`, `refactor`, `docs`, `feat`, `chore`, `archive`, `test`, `style`, `perf`, `ci`, `build`, `revert` (Conventional-Commits-ish core).
+
+### Implements
+
+- Mechanism #1 — Discover and derive (paired with `mechanism_commit_push_pr_atomic`: post-commit + post-push nags reinforce the atomic commit→push→PR flow)
+- Mechanism #11 — One branch, one scope (commit-on-main block + frozen-branch-on-merged-PR block)
+- Mechanism #17 — Structural checks use hooks, not behavioral rules (fourth implementation alongside `worktree-edit-gate`, `plan-review-gate`, `feedback-memory-gate`)
+
+### Out of scope (stays myOS-only or v0.5.1+)
+
+The full myOS gate (~2,017 LOC) includes additional checks that are myOS-specific or require per-user configuration not in v0.5:
+
+- Blocked-remotes registry (myOS interview-coach-skill upstream-fork case)
+- Owner-pattern enforcement (no per-user config in v0.5)
+- Spec-doc pairing (myOS-specific `SPEC_DOC_PAIRS`)
+- CHANGELOG / session-learnings / memory-index integrity (myOS lifecycle)
+- `gate_pre_checkout` (uses myOS `RELATED_REPOS` + `.claude-session-lock` protocol)
+- `gate_session_start` / `gate_session_end` (Linear / GH-issues / daily-plan / bot-issues / config-drift / repo-pair-drift digests)
+- `gate_post_pr` (Linear ticket auto-Done suggestion — known misfire pattern)
+
+### Cross-repo changes
+
+- `claude-mechanisms` v2.7 — extends `implementations:` on #1, #11, and #17 to include `git-workflow-gate` (v0.5.0).
+
+[v0.5.0]: https://github.com/christophecapel/claude-mechanisms-tools/releases/tag/v0.5.0
+
 ## [v0.4.0] — 2026-05-09 — Memory Discipline
 
 One small tool. When a feedback memory describes a bug, it should link to a Linear ticket so the broken behavior is tracked toward remediation. This gate enforces that link as a structural check (not a behavioral rule the model has to remember).

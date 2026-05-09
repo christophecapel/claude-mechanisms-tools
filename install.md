@@ -14,6 +14,7 @@ Skills (`/check`, `/press1-check`, `/plan-archive`, `/error-audit`) auto-discove
 ~/.claude/plugins/claude-mechanisms-tools/hooks/install-hook.sh                       # worktree-edit-gate (v0.1)
 ~/.claude/plugins/claude-mechanisms-tools/hooks/install-plan-review-gate.sh           # plan-review-gate Phase 1 + Phase 2 (v0.2)
 ~/.claude/plugins/claude-mechanisms-tools/hooks/install-feedback-memory-gate.sh       # feedback-memory-gate (v0.4)
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-git-workflow-gate.sh          # git-workflow-gate 5 gates (v0.5)
 ```
 
 All install scripts idempotently add their hook matchers to `~/.claude/settings.json`. Re-runs are safe.
@@ -36,6 +37,7 @@ Browse [`skills/`](skills/) or [`hooks/`](hooks/), open the file you want, and c
 - `hooks/worktree-edit-gate.py` → wire as a `PreToolUse` hook (see [Hooks](#hooks-setup) below)
 - `hooks/plan-review-gate.py` + `lib/plan_files_lib.py` → wire as two `PreToolUse` hooks (Phase 1 on `ExitPlanMode`, Phase 2 on `Bash`)
 - `hooks/feedback-memory-gate.py` → wire as a `PostToolUse` hook on `Write`
+- `hooks/git-workflow-gate.py` → wire as TWO hooks: `PreToolUse` on `Bash` (with `--pre-tool-use` mode arg) and `PostToolUse` on `Bash` (with `--post-tool-use` mode arg)
 
 ## Hooks setup
 
@@ -84,6 +86,47 @@ Or manually — add this entry under `hooks.PostToolUse`:
 ```
 
 The hook fast-paths to silent on non-feedback-memory writes. It only emits an `additionalContext` nudge when a `claude-memory/feedback_*.md` file describes a bug (matched against bug-indicator keywords) without a `**Linear:** CC-NN` reference.
+
+### git-workflow-gate (v0.5)
+
+Two PreToolUse + PostToolUse entries on `Bash` matcher. The included `install-git-workflow-gate.sh` wires both idempotently:
+
+```bash
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-git-workflow-gate.sh
+```
+
+Or manually — add these two entries:
+
+```json
+{
+  "PreToolUse": [{
+    "matcher": "Bash",
+    "hooks": [{
+      "type": "command",
+      "command": "python3 ~/.claude/plugins/claude-mechanisms-tools/hooks/git-workflow-gate.py --pre-tool-use"
+    }]
+  }],
+  "PostToolUse": [{
+    "matcher": "Bash",
+    "hooks": [{
+      "type": "command",
+      "command": "python3 ~/.claude/plugins/claude-mechanisms-tools/hooks/git-workflow-gate.py --post-tool-use"
+    }]
+  }]
+}
+```
+
+The gate is silent on pass. It emits when:
+- `cd <dir> && git ...` chain detected (deny — use `git -C` instead)
+- Commit attempted on `main`/`master` (deny — branch first)
+- Commit message format invalid or unknown type (deny — fix the message)
+- Push attempted while behind `origin/main` (deny — rebase first)
+- Push attempted to a branch with a merged PR (deny — frozen scope, new branch)
+- `--force` push (warn)
+- Commit succeeded but unpushed (info nag — push + open PR)
+- Push succeeded but no PR exists (info nag — open PR)
+
+**Per-repo override**: drop a `.commit-types` file at the repo root with one type per line to extend or replace the default `ALLOWED_COMMIT_TYPES`. Default set: `fix`, `refactor`, `docs`, `feat`, `chore`, `archive`, `test`, `style`, `perf`, `ci`, `build`, `revert`.
 
 ### plan-review-gate (v0.2)
 
