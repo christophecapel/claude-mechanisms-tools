@@ -4,6 +4,26 @@ All notable changes to `claude-mechanisms-tools` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.1] — 2026-05-10 — Dirty-tree pre-checkout (Gate 3)
+
+Patch follow-up to v0.5.0. Adds Gate 3 — denies `git checkout` / `git switch` when the working tree has uncommitted tracked-file changes. Branch switching with a dirty tree silently carries those changes onto the target branch and was the root cause of a real edit-sweeping incident in the source-of-truth myOS gate (warn-only proved insufficient under cognitive load → promoted to deny per HWW #18).
+
+### Added
+
+- **Gate 3 — pre-checkout** (PreToolUse on `Bash`): denies branch-switching commands when `git status --porcelain` shows modified or staged tracked files. Skips (silent allow):
+  - File-restoration forms via the new `is_file_restore()` parser: `git checkout -- <path>`, `git checkout <ref> -- <path>`, `git restore <path>`, `git restore --staged <path>`
+  - New-branch creation: `git checkout -b/-B <branch>`, `git switch -c/-C <branch>` — those legitimately move dirty work to a new branch
+  - Untracked-only working tree (untracked files don't travel on switch)
+- New parser helper `is_file_restore(git_cmd)` extracted verbatim from myOS source.
+- 14 new tests in `tests/test_git_workflow_gate.py` (`TestIsFileRestore` × 6 + `TestGate3PreCheckout` × 8). Total toolkit suite: 224 tests pass.
+
+### Out of scope (stays myOS-only)
+
+- `RELATED_REPOS` cross-repo dirty-state check
+- `_concurrent_session_active` (`.claude-session-lock` protocol)
+
+Tracks [CC-178](https://linear.app/christophec/issue/CC-178).
+
 ## [v0.5.0] — 2026-05-09 — Atomic Git Workflow
 
 One tool, five gates. Slim subset of the myOS git-workflow gate that's stayed myOS-private until now because it carried Linear/spec-doc/memory-index/SessionStart/SessionEnd coupling. The slim version drops the myOS-specific checks and ships the universally-applicable discipline.
