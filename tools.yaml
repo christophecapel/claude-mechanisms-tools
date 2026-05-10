@@ -11,9 +11,9 @@
 # v0.1.1 will add `cross_manifest_id_match` strategy to repo-pair-drift-gate.py.
 
 version: 1
-updated: 2026-05-09
+updated: 2026-05-10
 mechanisms_source: github.com/christophecapel/claude-mechanisms
-release: v0.5.0
+release: v0.6.0
 
 tools:
   - id: check
@@ -90,8 +90,8 @@ tools:
     file: hooks/git-workflow-gate.py
     install_script: hooks/install-git-workflow-gate.sh
     kind: hook
-    hook_event: PreToolUse+PostToolUse
+    hook_event: PreToolUse+PostToolUse+SessionStart
     hook_matcher: "Bash"
     introduced: v0.5.0
     mechanism_ids: [1, 11, 17]
-    description: "Six gates wired as PreToolUse+PostToolUse on Bash. Gate 0 (cd-chain) blocks chained-cd-then-git shell-state-leak pattern. Gate 1 (pre-commit) blocks commits to main + commit-msg format violations. Gate 1b (post-commit) info-nags unpushed commits. Gate 2 (pre-push) blocks pushing while behind origin/main + frozen-branch (merged PR), warns on force-push. Gate 3 (pre-checkout, v0.5.1) denies branch switch with dirty tracked-file changes; skips file-restore forms (`git checkout -- <path>`, `git restore`) and new-branch creation (`-b`/`-c`). Gate 5 (post-push) info-nags missing PR. Per-repo `.commit-types` file at repo root extends ALLOWED_COMMIT_TYPES. Slim subset of the full myOS gate; drops blocked-remotes / owner-pattern / spec-doc-pairing / changelog / session-learnings / memory-index / SessionStart / SessionEnd / RELATED_REPOS-cross-repo / concurrent-session-lock checks (myOS-specific)."
+    description: "Seven gates wired as PreToolUse+PostToolUse on Bash + SessionStart. Gate 0 (cd-chain) blocks chained-cd-then-git shell-state-leak pattern. Gate 1 (pre-commit) blocks commits to main + commit-msg format violations. Gate 1b (post-commit) info-nags unpushed commits. Gate 2 (pre-push) blocks pushing while behind origin/main + frozen-branch (merged PR), warns on force-push. Gate 3 (pre-checkout, v0.5.1) denies branch switch with dirty tracked-file changes; skips file-restore forms (`git checkout -- <path>`, `git restore`) and new-branch creation (`-b`/`-c`). Gate 5 (post-push) info-nags missing PR. Gate 6 (session-start, v0.6.0) info-nags merged feature branches awaiting `git branch -d` cleanup; capped at 20 candidates, validates merged-PR via `gh pr list`. Per-repo `.commit-types` file at repo root extends ALLOWED_COMMIT_TYPES. Slim subset of the full myOS gate; drops blocked-remotes / owner-pattern / spec-doc-pairing / changelog / session-learnings / memory-index / SessionEnd / RELATED_REPOS-cross-repo / concurrent-session-lock / Linear / daily-plan / bot-issues / repo-pair-drift digests (myOS-specific)."

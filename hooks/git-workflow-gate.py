@@ -11,6 +11,7 @@ Gates:
   Gate 2  — Pre-push (rebase-required, frozen-branch on merged PR, force-push warn)
   Gate 3  — Pre-checkout (dirty-tree deny on branch switch)
   Gate 5  — Post-push (PR-existence nag)
+  Gate 6  — Session-start (stale merged-branches digest, info nag)
 
 Configuration:
   - Per-repo `.commit-types` file at the repo root overrides ALLOWED_COMMIT_TYPES
@@ -426,6 +427,69 @@ def gate_post_commit(git_cmd, cwd):
         )
 
 
+def gate_session_start_stale_branches(cwd):
+    """Gate 6: SessionStart — list local merged branches awaiting cleanup.
+
+    Scans `git branch --merged main` for the current repo, then for each
+    candidate checks `gh pr list --head <branch> --state merged` to confirm
+    the branch's PR has merged on GitHub. Emits a single info-nag listing
+    cleanup commands. Fires once per Claude Code session via the
+    SessionStart hook event.
+
+    Behavior:
+      - Caps inspection at 20 branches (avoid scaling issues in large repos)
+      - Skips main / master from candidate list
+      - Silent on pass (HWW #20) — no merged branches found, no output
+      - Info-only — never auto-deletes (HWW #18: safest path first)
+
+    Slim subset for v0.6.0: drops Linear / daily-plan / bot-issues /
+    repo-pair-drift / error-audit-triage digests (myOS-specific).
+    """
+    repo_root = get_repo_root(cwd)
+
+    # List local branches reachable from main
+    result = run(
+        ["git", "branch", "--merged", "main", "--format=%(refname:short)"],
+        cwd=repo_root,
+    )
+    if result.returncode != 0:
+        return  # Not a git repo, no main branch, or other error
+
+    candidates = [
+        line.strip() for line in result.stdout.splitlines()
+        if line.strip() and line.strip() not in ("main", "master")
+    ][:20]
+
+    if not candidates:
+        return
+
+    # For each candidate, check whether a merged PR exists on GitHub
+    merged = []
+    for branch in candidates:
+        pr_result = run(
+            ["gh", "pr", "list", "--head", branch, "--state", "merged",
+             "--limit", "1", "--json", "number"],
+            cwd=repo_root,
+        )
+        if pr_result.returncode == 0 and pr_result.stdout.strip() not in ("", "[]"):
+            merged.append(branch)
+
+    if not merged:
+        return
+
+    count = len(merged)
+    cleanup_cmds = "\n  ".join(f"git branch -d {b}" for b in merged[:5])
+    if count > 5:
+        cleanup_cmds += f"\n  # ... and {count - 5} more"
+
+    info(
+        f"STALE BRANCHES: {count} merged branch(es) awaiting cleanup in this repo. "
+        f"Run:\n  {cleanup_cmds}\n"
+        f"Reflog preserves recovery (~90d).",
+        event_name="SessionStart",
+    )
+
+
 def gate_post_push(git_cmd, cwd):
     """Gate 5: Post-Push informational checks (PR-existence only — slim subset).
 
@@ -465,6 +529,12 @@ def main():
         hook_input = {}
 
     cwd = hook_input.get("cwd", os.getcwd())
+
+    # SessionStart mode has no tool_name — handle before the Bash check
+    if mode == "--session-start":
+        gate_session_start_stale_branches(cwd)
+        allow()
+
     tool_name = hook_input.get("tool_name") or hook_input.get("toolName", "")
     tool_input = hook_input.get("tool_input") or hook_input.get("toolInput", {})
 
