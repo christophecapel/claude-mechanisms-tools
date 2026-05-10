@@ -4,6 +4,32 @@ All notable changes to `claude-mechanisms-tools` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.0] — 2026-05-10 — Stability release & public-repo polish
+
+No-code release that marks the universal-applicability subset of the toolkit as feature-complete + stable. Bundles standard public-repo artifacts that were missing.
+
+Tracks [CC-180](https://linear.app/christophec/issue/CC-180).
+
+### Added
+
+- **`CONTRIBUTING.md`** — How to propose new tools, the bundle pattern (mechanism + tool cross-link), test expectations, PR shape
+- **`CODE_OF_CONDUCT.md`** — Contributor Covenant 2.1
+- **`SECURITY.md`** — Disclosure policy: GitHub private vulnerability reporting; 90-day responsible-disclosure default
+- **`.github/ISSUE_TEMPLATE/bug_report.md`** + **`feature_request.md`** — issue templates
+- **`.github/PULL_REQUEST_TEMPLATE.md`** — PR template with mechanism cross-link checklist
+- **`.gitignore`** — `.claude/`, `.DS_Store`, `__pycache__/`, etc.
+- **README "Stability commitment" section** — explicit v1.x compatibility guarantees: tool names, install paths, hook commands, CLI flags, `tools.yaml` schema, cross-link contract, hook JSON output shapes
+
+### Changed
+
+- **GitHub repo metadata** — description refreshed (was stale at v0.1); homepage cross-links to [`claude-mechanisms`](https://github.com/christophecapel/claude-mechanisms); 8 topics added for discoverability; Discussions enabled; Wiki disabled
+- **`tools.yaml`** — `release: v1.0.0`, `updated: 2026-05-10`
+- **`README.md`** — version badge → v1.0.0, stability badge added, roadmap row marked current
+
+### Stability commitment
+
+v1.0.0 means the existing tool surface is permanent: tool names, install paths, hook commands, `tools.yaml` schema, hook JSON output shapes. Breaking changes ship as v2.0 with a deprecation cycle. New features ship as v1.x minor/patch additively. See README's "Stability commitment" section.
+
 ## [v0.6.0] — 2026-05-10 — Stale-branches digest (Gate 6, SessionStart)
 
 Adds Gate 6 — a SessionStart hook that scans the current repo for local feature branches whose PRs have merged on GitHub but were never deleted locally. Emits a single info-nag listing cleanup commands. Fires once per Claude Code session, never blocks.

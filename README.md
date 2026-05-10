@@ -1,12 +1,41 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Built for](https://img.shields.io/badge/Built%20for-Claude%20Code-orange.svg)
-![Version](https://img.shields.io/badge/version-v0.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)
+![Stability](https://img.shields.io/badge/stability-stable-brightgreen.svg)
 
 > Tools that implement the operating mechanisms in [`claude-mechanisms`](https://github.com/christophecapel/claude-mechanisms).
 
 `claude-mechanisms` (the why) ↔ `claude-mechanisms-tools` (the how).
 
 Mechanisms describe how the work should be done. Tools enforce it. Each tool here implements one or more mechanisms from the catalog with a trigger, retry logic, and a failure path.
+
+## Stability commitment (v1.0.0)
+
+v1.0.0 marks the universal-applicability subset of the toolkit as **feature-complete and stable**. Five themes shipped (Session Hygiene, Plan Discipline, Detection & Audit, Memory Discipline, Atomic Git Workflow), 8 distinct tools, 231 tests.
+
+**What stable means here:**
+
+- Existing tool names, install paths (`~/.claude/plugins/claude-mechanisms-tools/`), hook commands (`python3 <toolkit>/hooks/<tool>.py --<mode>`), and CLI flags WILL NOT break in v1.x
+- Existing `tools.yaml` entries (id, file, mechanism_ids) WILL NOT break in v1.x
+- The cross-link contract with [`claude-mechanisms`](https://github.com/christophecapel/claude-mechanisms) (mechanism_id ↔ implementations path bidirectional) is permanent
+- Hook output format (deny/allow/warn/info JSON shapes) WILL NOT break in v1.x
+
+**What's still allowed:**
+
+- New tools added (minor version bumps: v1.1, v1.2, ...)
+- New gates within existing hooks (patch bumps: v1.0.1, v1.0.2, ...)
+- Existing tools gain new modes / env vars (additive only)
+- Hook stdout messages refined for clarity (the JSON shape stays; the prose in `permissionDecisionReason` may improve)
+- Test coverage grows
+
+Breaking changes ship as v2.0 with a deprecation cycle, never as a silent v1.x update.
+
+**What's NOT promised:**
+
+- That every release adds features. v1.x may go quiet — feature-complete means feature-complete.
+- That myOS-specific features (Linear API, daily-plan, etc.) ever get extracted. Those stay myOS-only by design.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for how to propose new tools or extensions.
 
 ## v0.6 — Stale-branches digest (current)
 
@@ -104,8 +133,9 @@ Three solo repos for three tools is the N+1 anti-pattern (Mechanism [#21](https:
 | v0.4 | Memory Discipline | `feedback-memory-gate` |
 | v0.5 | Atomic Git Workflow | `git-workflow-gate` (5 gates: cd-chain, pre-commit, post-commit, pre-push, post-push) |
 | v0.5.1 | Dirty-tree pre-checkout patch | `git-workflow-gate` Gate 3 (CC-178) |
-| **v0.6** (current) | Stale-branches digest | `git-workflow-gate` Gate 6 — SessionStart info-nag (CC-179) |
-| v0.7 | TBD | TBD |
+| v0.6 | Stale-branches digest | `git-workflow-gate` Gate 6 — SessionStart info-nag (CC-179) |
+| **v1.0.0** (current) | **Stability release** | Public-repo polish + stability commitment (CC-180) |
+| v1.x | TBD — only if real failure modes surface | Backlog: `BLOCKED_REMOTES` env-var, `OWNER_PATTERN` env-var |
 
 Cadence: one post per release. No batching.
 
