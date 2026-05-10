@@ -164,6 +164,28 @@ class TestParsePushRemote(unittest.TestCase):
         self.assertEqual(gwg.parse_push_remote("git push --force origin main"), "origin")
 
 
+class TestIsFileRestore(unittest.TestCase):
+    def test_checkout_double_dash_is_restore(self):
+        self.assertTrue(gwg.is_file_restore("git checkout -- file.txt"))
+
+    def test_checkout_ref_double_dash_is_restore(self):
+        self.assertTrue(gwg.is_file_restore("git checkout HEAD -- file.txt"))
+
+    def test_restore_command_is_restore(self):
+        self.assertTrue(gwg.is_file_restore("git restore file.txt"))
+
+    def test_restore_staged_is_restore(self):
+        self.assertTrue(gwg.is_file_restore("git restore --staged file.txt"))
+
+    def test_branch_switch_is_not_restore(self):
+        self.assertFalse(gwg.is_file_restore("git checkout main"))
+        self.assertFalse(gwg.is_file_restore("git switch main"))
+
+    def test_new_branch_is_not_restore(self):
+        self.assertFalse(gwg.is_file_restore("git checkout -b feat/x"))
+        self.assertFalse(gwg.is_file_restore("git switch -c feat/x"))
+
+
 class TestGetAllowedCommitTypes(unittest.TestCase):
     def test_default_set(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -324,6 +346,100 @@ class TestGate1bPostCommit(unittest.TestCase):
         # Amend should produce no output (silent)
         ctx = context(parse(out))
         self.assertNotIn("Unpushed", ctx)
+
+
+# =========================================================================
+# Gate 3: pre-checkout (dirty-tree deny)
+# =========================================================================
+
+class TestGate3PreCheckout(unittest.TestCase):
+    def setUp(self):
+        self.tmp = make_tmp_repo()
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _make_dirty_tracked(self):
+        """Modify a tracked file so the working tree is dirty."""
+        Path(self.tmp, "README.md").write_text("modified\n")
+
+    def _make_untracked(self):
+        """Add an untracked file (does not travel on switch)."""
+        Path(self.tmp, "scratch.py").write_text("x = 1\n")
+
+    def test_dirty_checkout_denied(self):
+        self._make_dirty_tracked()
+        out, _, _ = run_gate("--pre-tool-use", {
+            "cwd": self.tmp,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git checkout main"},
+        }, cwd=self.tmp)
+        self.assertEqual(decision(parse(out)), "deny")
+        self.assertIn("Uncommitted changes", reason(parse(out)))
+        self.assertIn("README.md", reason(parse(out)))
+
+    def test_dirty_switch_denied(self):
+        self._make_dirty_tracked()
+        out, _, _ = run_gate("--pre-tool-use", {
+            "cwd": self.tmp,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git switch main"},
+        }, cwd=self.tmp)
+        self.assertEqual(decision(parse(out)), "deny")
+
+    def test_clean_checkout_allowed(self):
+        out, _, _ = run_gate("--pre-tool-use", {
+            "cwd": self.tmp,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git checkout main"},
+        }, cwd=self.tmp)
+        self.assertNotEqual(decision(parse(out)), "deny")
+
+    def test_untracked_only_allowed(self):
+        self._make_untracked()
+        out, _, _ = run_gate("--pre-tool-use", {
+            "cwd": self.tmp,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git checkout main"},
+        }, cwd=self.tmp)
+        self.assertNotEqual(decision(parse(out)), "deny")
+
+    def test_file_restore_dash_dash_allowed(self):
+        self._make_dirty_tracked()
+        out, _, _ = run_gate("--pre-tool-use", {
+            "cwd": self.tmp,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git checkout -- README.md"},
+        }, cwd=self.tmp)
+        self.assertNotEqual(decision(parse(out)), "deny")
+
+    def test_git_restore_allowed(self):
+        self._make_dirty_tracked()
+        out, _, _ = run_gate("--pre-tool-use", {
+            "cwd": self.tmp,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git restore README.md"},
+        }, cwd=self.tmp)
+        self.assertNotEqual(decision(parse(out)), "deny")
+
+    def test_new_branch_creation_b_flag_allowed_with_dirty_tree(self):
+        self._make_dirty_tracked()
+        out, _, _ = run_gate("--pre-tool-use", {
+            "cwd": self.tmp,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git checkout -b feat/new"},
+        }, cwd=self.tmp)
+        self.assertNotEqual(decision(parse(out)), "deny")
+
+    def test_new_branch_creation_c_flag_allowed_with_dirty_tree(self):
+        self._make_dirty_tracked()
+        out, _, _ = run_gate("--pre-tool-use", {
+            "cwd": self.tmp,
+            "tool_name": "Bash",
+            "tool_input": {"command": "git switch -c feat/new"},
+        }, cwd=self.tmp)
+        self.assertNotEqual(decision(parse(out)), "deny")
 
 
 # =========================================================================

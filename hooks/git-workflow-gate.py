@@ -9,6 +9,7 @@ Gates:
   Gate 1  — Pre-commit (branch-not-main, commit-msg format)
   Gate 1b — Post-commit (unpushed-commits info nag)
   Gate 2  — Pre-push (rebase-required, frozen-branch on merged PR, force-push warn)
+  Gate 3  — Pre-checkout (dirty-tree deny on branch switch)
   Gate 5  — Post-push (PR-existence nag)
 
 Configuration:
@@ -225,7 +226,81 @@ def parse_push_remote(git_cmd):
     return None
 
 
+def is_file_restore(git_cmd):
+    """Check if a git checkout/switch/restore command is a file restore (not branch switch).
+
+    Returns True for:
+      git checkout -- <file>       (file restore)
+      git checkout HEAD -- <file>  (file restore with ref)
+      git restore <file>           (explicit restore command)
+      git restore --staged <file>  (unstage)
+    Returns False for:
+      git checkout <branch>        (branch switch)
+      git checkout -b <branch>     (branch creation)
+      git switch <branch>          (branch switch)
+    """
+    parts = git_cmd.split()
+    if len(parts) < 2:
+        return False
+    if parts[1] == "restore":
+        return True
+    if "--" in parts:
+        return True
+    return False
+
+
 # --- Gates ---
+
+def gate_pre_checkout(git_cmd, cwd):
+    """Gate 3: Pre-Checkout dirty-tree deny (slim subset).
+
+    Branch switching with modified or staged tracked files silently carries
+    those changes onto the target branch — proven destructive in 2026-04-28
+    incident (PR #450, ~1h edits across 7 files swept). myOS shipped this as
+    `warn()` originally and promoted to `deny()` after warn-only proved
+    insufficient under cognitive load (HWW #17).
+
+    Skips (silent allow):
+      - File-restoration forms (via `is_file_restore()`):
+          git checkout -- <path> / git checkout <ref> -- <path> / git restore <path>
+      - New-branch creation: `-c`/`-C` (git switch) / `-b`/`-B` (git checkout)
+        — those legitimately move dirty work to a new branch
+      - Untracked-only working tree — untracked files don't travel on switch
+
+    Slim subset for v0.5.1: drops `RELATED_REPOS` cross-repo concurrency check
+    and `.claude-session-lock` concurrent-session protocol (myOS-specific).
+    """
+    if is_file_restore(git_cmd):
+        return
+
+    parts = git_cmd.split()
+    if any(flag in parts for flag in ("-b", "-B", "-c", "-C")):
+        return
+
+    repo_root = get_repo_root(cwd)
+    result = run(["git", "status", "--porcelain"], cwd=repo_root)
+    if result.returncode != 0:
+        return
+
+    tracked_dirty = [
+        line for line in result.stdout.splitlines()
+        if line and not line.startswith("??")
+    ]
+    if not tracked_dirty:
+        return
+
+    file_count = len(tracked_dirty)
+    sample = ", ".join(line[3:] for line in tracked_dirty[:3])
+    if file_count > 3:
+        sample += f", and {file_count - 3} more"
+
+    deny(
+        f"Uncommitted changes ({file_count} file(s): {sample}). "
+        f"Switching branches carries these onto the target branch and can sweep "
+        f"in-progress edits silently. Commit or stash before switching: "
+        f"`git stash push -m '<message>'` or `git add -A && git commit -m '<type>: <message>'`."
+    )
+
 
 def gate_pre_commit(git_cmd, cwd):
     """Gate 1: Pre-Commit checks (branch-not-main + commit-msg format)."""
@@ -423,6 +498,8 @@ def main():
                 gate_pre_commit(git_cmd, cwd)  # exits on deny/allow
             elif re.match(r'^git\s+push\b', git_cmd):
                 gate_pre_push(git_cmd, cwd)
+            elif re.match(r'^git\s+(checkout|switch|restore)\b', git_cmd):
+                gate_pre_checkout(git_cmd, cwd)
         allow()
 
     elif mode == "--post-tool-use":

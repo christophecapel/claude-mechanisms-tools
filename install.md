@@ -14,7 +14,7 @@ Skills (`/check`, `/press1-check`, `/plan-archive`, `/error-audit`) auto-discove
 ~/.claude/plugins/claude-mechanisms-tools/hooks/install-hook.sh                       # worktree-edit-gate (v0.1)
 ~/.claude/plugins/claude-mechanisms-tools/hooks/install-plan-review-gate.sh           # plan-review-gate Phase 1 + Phase 2 (v0.2)
 ~/.claude/plugins/claude-mechanisms-tools/hooks/install-feedback-memory-gate.sh       # feedback-memory-gate (v0.4)
-~/.claude/plugins/claude-mechanisms-tools/hooks/install-git-workflow-gate.sh          # git-workflow-gate 5 gates (v0.5)
+~/.claude/plugins/claude-mechanisms-tools/hooks/install-git-workflow-gate.sh          # git-workflow-gate 6 gates (v0.5 + Gate 3 in v0.5.1)
 ```
 
 All install scripts idempotently add their hook matchers to `~/.claude/settings.json`. Re-runs are safe.
@@ -122,6 +122,7 @@ The gate is silent on pass. It emits when:
 - Commit message format invalid or unknown type (deny — fix the message)
 - Push attempted while behind `origin/main` (deny — rebase first)
 - Push attempted to a branch with a merged PR (deny — frozen scope, new branch)
+- Branch switch attempted with dirty tracked-file changes (deny — commit/stash first; v0.5.1, skips file-restore + new-branch creation)
 - `--force` push (warn)
 - Commit succeeded but unpushed (info nag — push + open PR)
 - Push succeeded but no PR exists (info nag — open PR)
