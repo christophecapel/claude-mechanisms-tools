@@ -4,6 +4,28 @@ All notable changes to `claude-mechanisms-tools` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.6.0] — 2026-05-10 — Stale-branches digest (Gate 6, SessionStart)
+
+Adds Gate 6 — a SessionStart hook that scans the current repo for local feature branches whose PRs have merged on GitHub but were never deleted locally. Emits a single info-nag listing cleanup commands. Fires once per Claude Code session, never blocks.
+
+Surfaced from a real failure: at v0.5.1 close on 2026-05-10, both `claude-mechanisms` and `myOS` had accumulated 5 stale merged feature branches each. Behavioral rule "delete merged branches" failed under cognitive load (HWW #17). The structural fix is a SessionStart digest that surfaces the work-to-do once per session.
+
+Tracks [CC-179](https://linear.app/christophec/issue/CC-179).
+
+### Added
+
+- **Gate 6 — SessionStart stale-branches digest**: scans `git branch --merged main` (capped at 20 candidates), validates each via `gh pr list --head <branch> --state merged`, emits info-nag listing cleanup commands. Skips `main` / `master`. Silent on pass (HWW #20). Info-only — never auto-deletes (HWW #18: safest path first).
+- New `--session-start` mode in `git-workflow-gate.py` `main()` dispatcher.
+- New `install_session_start()` helper in `install-git-workflow-gate.sh` — wires SessionStart hook in `~/.claude/settings.json` (no matcher — different shape from PreToolUse/PostToolUse). Idempotent.
+- 7 new tests in `tests/test_git_workflow_gate.py` (`TestGate6SessionStartStaleBranches`). Total toolkit suite: 231 tests pass.
+
+### Out of scope (stays myOS-only)
+
+- Auto-deletion of merged branches — info-nag only (HWW #18).
+- Linear ticket digest, daily-plan priorities, bot-issues digest, repo-pair-drift detection, error-audit-triage, investing alerts — myOS-specific.
+- Cross-repo digest — one repo at a time.
+- BLOCKED_REMOTES env-var, OWNER_PATTERN env-var — deferred to v0.6.1+ if demand.
+
 ## [v0.5.1] — 2026-05-10 — Dirty-tree pre-checkout (Gate 3)
 
 Patch follow-up to v0.5.0. Adds Gate 3 — denies `git checkout` / `git switch` when the working tree has uncommitted tracked-file changes. Branch switching with a dirty tree silently carries those changes onto the target branch and was the root cause of a real edit-sweeping incident in the source-of-truth myOS gate (warn-only proved insufficient under cognitive load → promoted to deny per HWW #18).
