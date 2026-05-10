@@ -13,7 +13,7 @@
 version: 1
 updated: 2026-05-10
 mechanisms_source: github.com/christophecapel/claude-mechanisms
-release: v0.6.0
+release: v1.0.0
 
 tools:
   - id: check
